@@ -131,7 +131,7 @@ try {
         Write-Host "`nUseful commands:" -ForegroundColor Yellow
         Write-Host "  .\backup-daily.ps1 -Status    # Check service status" -ForegroundColor Gray
         Write-Host "  .\backup-daily.ps1 -Stop      # Stop the service" -ForegroundColor Gray
-        Write-Host "  docker-compose logs -f worldedit-backup-daily  # Follow logs" -ForegroundColor Gray
+        Write-Host "  docker compose logs -f worldedit-backup-daily  # Follow logs" -ForegroundColor Gray
     } else {
         Write-Host "`nFailed to start daily backup service" -ForegroundColor Red
         exit 1

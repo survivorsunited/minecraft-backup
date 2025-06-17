@@ -189,7 +189,7 @@ function View-BackupStatus {
     Write-Host ""
     Write-Host "Docker Services:" -ForegroundColor Yellow
     try {
-        docker-compose ps
+        docker compose ps
     }
     catch {
         Write-Host "  No Docker services running" -ForegroundColor Gray
@@ -217,15 +217,15 @@ function View-BackupLogs {
     switch ($choice) {
         1 { # Daily backup logs
             Write-Host "`nDaily backup service logs:" -ForegroundColor Yellow
-            docker-compose logs --tail=20 worldedit-backup-daily
+            docker compose logs --tail=20 worldedit-backup-daily
         }
         2 { # Hourly backup logs
             Write-Host "`nHourly backup service logs:" -ForegroundColor Yellow
-            docker-compose logs --tail=20 worldedit-backup-hourly
+            docker compose logs --tail=20 worldedit-backup-hourly
         }
         3 { # Weekly backup logs
             Write-Host "`nWeekly backup service logs:" -ForegroundColor Yellow
-            docker-compose logs --tail=20 worldedit-backup-weekly
+            docker compose logs --tail=20 worldedit-backup-weekly
         }
         4 { # Back to main menu
             return

@@ -53,6 +53,28 @@
 NEXT_RUN_FILE=""
 
 # ------------------------------------------------------------------------------
+# Function: determine_world_path
+# Description: Determines the correct world path for singleplayer vs multiplayer
+# ------------------------------------------------------------------------------
+determine_world_path() {
+    local singleplayer_path="$MINECRAFT_HOME_PATH/saves/$WORLD_NAME"
+    local multiplayer_path="$MINECRAFT_HOME_PATH/$WORLD_NAME"
+    
+    if [[ -d "$singleplayer_path" ]]; then
+        echo "$singleplayer_path"
+        echo "Detected singleplayer world: $singleplayer_path" >&2
+    elif [[ -d "$multiplayer_path" ]]; then
+        echo "$multiplayer_path"
+        echo "Detected multiplayer/server world: $multiplayer_path" >&2
+    else
+        echo "Error: World '$WORLD_NAME' not found in either:" >&2
+        echo "  Singleplayer: $singleplayer_path" >&2
+        echo "  Multiplayer: $multiplayer_path" >&2
+        exit 1
+    fi
+}
+
+# ------------------------------------------------------------------------------
 # Function: check_prerequisites
 # Description: Validates required environment variables and checks for necessary
 #              directories, executables, and Perl modules.
@@ -61,7 +83,6 @@ check_prerequisites() {
     # List of all required environment variables
     REQUIRED_VARS=(
         "BACKUP_PATH"
-        "WORLD_PATH"
         "WORLD_NAME"
         "TMP_DIR"
     )
@@ -86,7 +107,8 @@ check_prerequisites() {
         FULL_BACKUP="false"
     fi
 
-    # Validate world path
+    # Determine world path and validate it
+    WORLD_PATH=$(determine_world_path)
     if [[ ! -d "$WORLD_PATH" ]]; then
         echo "Error: World path $WORLD_PATH does not exist."
         exit 1
@@ -219,29 +241,31 @@ calculate_next_run_time() {
 create_full_backup() {
     local timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
     local backup_name="${timestamp}-full"
-    local minecraft_parent_dir=$(dirname "$WORLD_PATH")
+    local minecraft_home="${MINECRAFT_HOME_PATH:-/minecraft}"
     local final_backup_path=""
 
     echo "Creating full .minecraft backup: $backup_name"
+    echo "Excluding backups folder to prevent recursion"
 
     # Create final backup based on compression type
     case "$COMPRESSION_TYPE" in
         "zip")
             final_backup_path="$BACKUP_PATH/$backup_name.zip"
-            echo "Creating ZIP archive: $final_backup_path"
-            # Zip the entire .minecraft folder
-            cd "$minecraft_parent_dir" && zip -r "$final_backup_path" ".minecraft" >/dev/null 2>&1
+            echo "Creating ZIP archive with 7zip: $final_backup_path"
+            # Use 7zip to create zip archive, excluding backups folder
+            cd "$minecraft_home" && 7z a -tzip "$final_backup_path" . -x!backups >/dev/null 2>&1
             ;;
         "tar.gz"|"tgz")
             final_backup_path="$BACKUP_PATH/$backup_name.tar.gz"
-            echo "Creating TAR.GZ archive: $final_backup_path"
-            # Tar the entire .minecraft folder
-            cd "$minecraft_parent_dir" && tar -czf "$final_backup_path" ".minecraft" >/dev/null 2>&1
+            echo "Creating TAR.GZ archive with 7zip: $final_backup_path"
+            # Use 7zip to create tar.gz archive, excluding backups folder
+            cd "$minecraft_home" && 7z a -ttar "$final_backup_path" . -x!backups >/dev/null 2>&1
             ;;
         "none")
             final_backup_path="$BACKUP_PATH/$backup_name"
             echo "Creating uncompressed backup: $final_backup_path"
-            cp -r "$minecraft_parent_dir/.minecraft" "$final_backup_path"
+            # Use 7zip to create uncompressed archive, excluding backups folder
+            cd "$minecraft_home" && 7z a -ttar "$final_backup_path" . -x!backups >/dev/null 2>&1
             ;;
     esac
 
@@ -251,7 +275,7 @@ create_full_backup() {
     fi
 
     echo "Full .minecraft backup completed: $final_backup_path"
-    echo "Backup structure: .minecraft/ (Complete Minecraft installation)"
+    echo "Backup structure: .minecraft/ (Complete Minecraft installation, excluding backups)"
 }
 
 # ------------------------------------------------------------------------------
@@ -262,48 +286,42 @@ create_full_backup() {
 create_worldedit_backup() {
     local timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
     local backup_name="$timestamp"
-    local temp_backup_dir="$TMP_DIR/$backup_name"
-    local world_backup_dir="$temp_backup_dir/$WORLD_NAME"
     local final_backup_path=""
+    
+    # Calculate world path from minecraft home and world name
+    local minecraft_home="${MINECRAFT_HOME_PATH:-/minecraft}"
+    local world_path="$minecraft_home/saves/$WORLD_NAME"
 
     echo "Creating WorldEdit snapshot backup: $backup_name"
-
-    # Create temporary directory structure - put world folder directly in temp
-    local direct_world_dir="$TMP_DIR/$WORLD_NAME"
-    mkdir -p "$direct_world_dir"
-
-    # Copy world data based on INCLUDE_REGION_ONLY setting
-    if [[ "$INCLUDE_REGION_ONLY" == "true" ]]; then
-        echo "Backing up region folder only..."
-        cp -r "$WORLD_PATH/region" "$direct_world_dir/"
-    else
-        echo "Backing up entire world folder..."
-        cp -r "$WORLD_PATH"/* "$direct_world_dir/"
-    fi
-
-    if [[ $? -ne 0 ]]; then
-        echo "Error: Failed to copy world data to temporary directory."
-        exit 1
-    fi
 
     # Create final backup based on compression type
     case "$COMPRESSION_TYPE" in
         "zip")
             final_backup_path="$BACKUP_PATH/$backup_name.zip"
-            echo "Creating ZIP archive: $final_backup_path"
-            # Zip the world folder directly from temp directory
-            cd "$TMP_DIR" && zip -r "$final_backup_path" "$WORLD_NAME" >/dev/null 2>&1
+            echo "Creating ZIP archive with 7zip: $final_backup_path"
+            if [[ "$INCLUDE_REGION_ONLY" == "true" ]]; then
+                cd "$world_path" && 7z a -tzip "$final_backup_path" region >/dev/null 2>&1
+            else
+                cd "$world_path" && 7z a -tzip "$final_backup_path" . >/dev/null 2>&1
+            fi
             ;;
         "tar.gz"|"tgz")
             final_backup_path="$BACKUP_PATH/$backup_name.tar.gz"
-            echo "Creating TAR.GZ archive: $final_backup_path"
-            # Tar the world folder directly from temp directory
-            cd "$TMP_DIR" && tar -czf "$final_backup_path" "$WORLD_NAME" >/dev/null 2>&1
+            echo "Creating TAR.GZ archive with 7zip: $final_backup_path"
+            if [[ "$INCLUDE_REGION_ONLY" == "true" ]]; then
+                cd "$world_path" && 7z a -ttar "$final_backup_path" region >/dev/null 2>&1
+            else
+                cd "$world_path" && 7z a -ttar "$final_backup_path" . >/dev/null 2>&1
+            fi
             ;;
         "none")
             final_backup_path="$BACKUP_PATH/$backup_name"
             echo "Creating uncompressed backup: $final_backup_path"
-            mv "$direct_world_dir" "$final_backup_path"
+            if [[ "$INCLUDE_REGION_ONLY" == "true" ]]; then
+                cp -r "$world_path/region" "$final_backup_path"
+            else
+                cp -r "$world_path" "$final_backup_path"
+            fi
             ;;
     esac
 
@@ -311,9 +329,6 @@ create_worldedit_backup() {
         echo "Error: Failed to create backup archive."
         exit 1
     fi
-
-    # Clean up temporary directory
-    rm -rf "$direct_world_dir"
 
     echo "WorldEdit snapshot backup completed: $final_backup_path"
     echo "Backup structure: $WORLD_NAME/region/ (WorldEdit compatible)"
@@ -329,67 +344,53 @@ create_backup_timestamp() {
 
 # ------------------------------------------------------------------------------
 # Function: create_backup_rotated
-# Description: Creates a backup using a rotation scheme based on an index file.
+# Description: Creates a backup using a rotation scheme based on a file list in an index file.
+#              Maintains a list of backup files and removes the oldest when limit is reached.
 # ------------------------------------------------------------------------------
 create_backup_rotated() {
     local current_index_file="$BACKUP_PATH/${WORLD_NAME}.index"
-    local next_index=1
-
-    # If the index file exists, calculate the next index
-    if [[ -f "$current_index_file" ]]; then
-        current_index=$(cat "$current_index_file" | tr -d ' \t\r\n')
-        next_index=$((current_index % FILES_TO_KEEP + 1))
-    fi
-
-    # Save the updated index
-    echo "$next_index" > "$current_index_file"
-
-    # Format the index as a 4-digit number (e.g., 0001, 0002)
-    local padded_index
-    printf -v padded_index "%04d" "$next_index"
-
-    # Create backup with index-based name
     local timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
-    local backup_name="${timestamp}-${padded_index}"
-    local temp_backup_dir="$TMP_DIR/$backup_name"
-    local world_backup_dir="$temp_backup_dir/$WORLD_NAME"
+    local backup_name="$timestamp"
     local final_backup_path=""
+    local backup_filename=""
+    
+    # Calculate world path from minecraft home and world name
+    local minecraft_home="${MINECRAFT_HOME_PATH:-/minecraft}"
+    local world_path="$minecraft_home/saves/$WORLD_NAME"
 
     echo "Creating rotated WorldEdit snapshot backup: $backup_name"
-
-    # Create temporary directory structure
-    mkdir -p "$world_backup_dir"
-
-    # Copy world data based on INCLUDE_REGION_ONLY setting
-    if [[ "$INCLUDE_REGION_ONLY" == "true" ]]; then
-        echo "Backing up region folder only..."
-        cp -r "$WORLD_PATH/region" "$world_backup_dir/"
-    else
-        echo "Backing up entire world folder..."
-        cp -r "$WORLD_PATH"/* "$world_backup_dir/"
-    fi
-
-    if [[ $? -ne 0 ]]; then
-        echo "Error: Failed to copy world data to temporary directory."
-        exit 1
-    fi
 
     # Create final backup based on compression type
     case "$COMPRESSION_TYPE" in
         "zip")
-            final_backup_path="$BACKUP_PATH/$backup_name.zip"
-            echo "Creating ZIP archive: $final_backup_path"
-            cd "$TMP_DIR" && zip -r "$final_backup_path" "$backup_name" >/dev/null 2>&1
+            backup_filename="$backup_name.zip"
+            final_backup_path="$BACKUP_PATH/$backup_filename"
+            echo "Creating ZIP archive with 7zip: $final_backup_path"
+            if [[ "$INCLUDE_REGION_ONLY" == "true" ]]; then
+                cd "$world_path" && 7z a -tzip "$final_backup_path" region >/dev/null 2>&1
+            else
+                cd "$world_path" && 7z a -tzip "$final_backup_path" . >/dev/null 2>&1
+            fi
             ;;
         "tar.gz"|"tgz")
-            final_backup_path="$BACKUP_PATH/$backup_name.tar.gz"
-            echo "Creating TAR.GZ archive: $final_backup_path"
-            cd "$TMP_DIR" && tar -czf "$final_backup_path" "$backup_name" >/dev/null 2>&1
+            backup_filename="$backup_name.tar.gz"
+            final_backup_path="$BACKUP_PATH/$backup_filename"
+            echo "Creating TAR.GZ archive with 7zip: $final_backup_path"
+            if [[ "$INCLUDE_REGION_ONLY" == "true" ]]; then
+                cd "$world_path" && 7z a -ttar "$final_backup_path" region >/dev/null 2>&1
+            else
+                cd "$world_path" && 7z a -ttar "$final_backup_path" . >/dev/null 2>&1
+            fi
             ;;
         "none")
-            final_backup_path="$BACKUP_PATH/$backup_name"
+            backup_filename="$backup_name"
+            final_backup_path="$BACKUP_PATH/$backup_filename"
             echo "Creating uncompressed backup: $final_backup_path"
-            mv "$temp_backup_dir" "$final_backup_path"
+            if [[ "$INCLUDE_REGION_ONLY" == "true" ]]; then
+                cp -r "$world_path/region" "$final_backup_path"
+            else
+                cp -r "$world_path" "$final_backup_path"
+            fi
             ;;
     esac
 
@@ -398,11 +399,65 @@ create_backup_rotated() {
         exit 1
     fi
 
-    # Clean up temporary directory
-    rm -rf "$temp_backup_dir"
+    # Update the index file with the new backup
+    update_backup_index "$current_index_file" "$backup_filename"
 
     echo "Rotated WorldEdit snapshot backup completed: $final_backup_path"
     echo "Backup structure: $backup_name/$WORLD_NAME/region/ (WorldEdit compatible)"
+}
+
+# ------------------------------------------------------------------------------
+# Function: update_backup_index
+# Description: Updates the backup index file by adding a new backup file and
+#              removing old backups to maintain the retention limit.
+# Parameters:
+#   $1 - Index file path
+#   $2 - New backup filename to add
+# ------------------------------------------------------------------------------
+update_backup_index() {
+    local index_file="$1"
+    local new_backup="$2"
+    local temp_index_file="${index_file}.tmp"
+
+    # Create index file if it doesn't exist
+    if [[ ! -f "$index_file" ]]; then
+        touch "$index_file"
+    fi
+
+    # Add the new backup to the end of the list
+    echo "$new_backup" >> "$index_file"
+
+    # Count total backups and remove oldest if we exceed the limit
+    local total_backups=$(wc -l < "$index_file")
+    local files_to_keep=${FILES_TO_KEEP:-7}  # Default to 7 if not set
+
+    if [[ $total_backups -gt $files_to_keep ]]; then
+        echo "Backup count ($total_backups) exceeds retention limit ($files_to_keep). Removing oldest backups..."
+        
+        # Get the list of backups to remove (oldest first)
+        local backups_to_remove=$(head -n $((total_backups - files_to_keep)) "$index_file")
+        
+        # Remove the old backup files
+        while IFS= read -r old_backup; do
+            if [[ -n "$old_backup" ]]; then
+                local old_backup_path="$BACKUP_PATH/$old_backup"
+                if [[ -f "$old_backup_path" ]]; then
+                    echo "Removing old backup: $old_backup"
+                    rm -f "$old_backup_path"
+                else
+                    echo "Warning: Old backup file not found: $old_backup_path"
+                fi
+            fi
+        done <<< "$backups_to_remove"
+        
+        # Update the index file to keep only the newest backups
+        tail -n "$files_to_keep" "$index_file" > "$temp_index_file"
+        mv "$temp_index_file" "$index_file"
+        
+        echo "Retention cleanup completed. Kept $files_to_keep most recent backups."
+    else
+        echo "Backup count ($total_backups) is within retention limit ($files_to_keep)."
+    fi
 }
 
 # ------------------------------------------------------------------------------

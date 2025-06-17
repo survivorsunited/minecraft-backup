@@ -8,11 +8,11 @@ services:
     restart: no
     user: root
     volumes:
-      - ${MINECRAFT_WORLD_PATH}:/minecraft/world:ro
+      - ${MINECRAFT_HOME_PATH}:/minecraft:ro
       - ${WORLDEDIT_BACKUP_PATH}:/backups
       - ${WORLDEDIT_TMP_DIR}:/tmp/backup
     environment:
-      - WORLD_PATH=/minecraft/world
+      - MINECRAFT_HOME_PATH=/minecraft
       - WORLD_NAME=${MINECRAFT_WORLD_NAME:-world}
       - BACKUP_PATH=/backups
       - TMP_DIR=/tmp/backup
@@ -31,7 +31,7 @@ services:
     restart: unless-stopped
     user: root
     volumes:
-      - ${MINECRAFT_WORLD_PATH}:/minecraft/world:ro
+      - ${MINECRAFT_HOME_PATH}:/minecraft:ro
       - ${WORLDEDIT_BACKUP_PATH}:/backups
       - ${WORLDEDIT_TMP_DIR}:/tmp/backup
     healthcheck:
@@ -40,7 +40,7 @@ services:
       timeout: 5s
       retries: 3
     environment:
-      - WORLD_PATH=/minecraft/world
+      - MINECRAFT_HOME_PATH=/minecraft
       - WORLD_NAME=${MINECRAFT_WORLD_NAME:-world}
       - BACKUP_PATH=/backups
       - TMP_DIR=/tmp/backup
@@ -58,7 +58,7 @@ services:
     restart: unless-stopped
     user: root
     volumes:
-      - ${MINECRAFT_WORLD_PATH}:/minecraft/world:ro
+      - ${MINECRAFT_HOME_PATH}:/minecraft:ro
       - ${WORLDEDIT_BACKUP_PATH}:/backups
       - ${WORLDEDIT_TMP_DIR}:/tmp/backup
     healthcheck:
@@ -67,7 +67,7 @@ services:
       timeout: 5s
       retries: 3
     environment:
-      - WORLD_PATH=/minecraft/world
+      - MINECRAFT_HOME_PATH=/minecraft
       - WORLD_NAME=${MINECRAFT_WORLD_NAME:-world}
       - BACKUP_PATH=/backups
       - TMP_DIR=/tmp/backup
@@ -85,7 +85,7 @@ services:
     restart: unless-stopped
     user: root
     volumes:
-      - ${MINECRAFT_WORLD_PATH}:/minecraft/world:ro
+      - ${MINECRAFT_HOME_PATH}:/minecraft:ro
       - ${WORLDEDIT_BACKUP_PATH}:/backups
       - ${WORLDEDIT_TMP_DIR}:/tmp/backup
     healthcheck:
@@ -94,7 +94,7 @@ services:
       timeout: 5s
       retries: 3
     environment:
-      - WORLD_PATH=/minecraft/world
+      - MINECRAFT_HOME_PATH=/minecraft
       - WORLD_NAME=${MINECRAFT_WORLD_NAME:-world}
       - BACKUP_PATH=/backups
       - TMP_DIR=/tmp/backup

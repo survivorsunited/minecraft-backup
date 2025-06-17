@@ -77,7 +77,7 @@ Show-BackupConfiguration -WorldPath $WorldPath -BackupPath $BackupPath -WorldNam
 New-EnvFile -WorldPath $WorldPath -BackupPath $BackupPath -WorldName $WorldName -CompressionType $CompressionType -RegionOnly $RegionOnly -FullBackup $FullBackup
 
 # Build Docker image if needed
-if (-not (Build-DockerImage -ServiceName "worldedit-backup-now")) {
+if (-not (Build-DockerImage -ServiceName "worldedit-backup-now" -Profile "worldedit-backup")) {
     exit 1
 }
 

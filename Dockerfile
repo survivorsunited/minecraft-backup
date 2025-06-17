@@ -7,10 +7,13 @@ ENV TZ=UTC
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     zip \
+    unzip \
     tar \
     gzip \
+    cron \
     perl \
     libdatetime-event-cron-perl \
+    p7zip-full \
     curl \
     wget \
     && rm -rf /var/lib/apt/lists/*

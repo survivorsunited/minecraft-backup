@@ -346,66 +346,16 @@ Get-ExecutionPolicy
 # Custom schedule (3 AM daily)
 .\backup-daily.ps1 -Schedule "0 3 * * *" -Retention 30
 
+# Hourly backups (every hour on the hour)
+.\backup-daily.ps1 -Schedule "0 * * * *" -Retention 168
+
+# Hourly backups (every hour at 30 minutes past)
+.\backup-daily.ps1 -Schedule "30 * * * *" -Retention 168
+
+# Every 5 minutes
+.\backup-daily.ps1 -Schedule "*/5 * * * *" -Retention 288
+
 # Service management
 .\backup-daily.ps1 -Stop
 .\backup-daily.ps1 -Status
 ```
-
-## File Structure
-
-```
-minecraft-backup/
-├── functions.ps1              # Shared functions library
-├── backup-now.ps1             # One-time backup script
-├── backup-daily.ps1           # Daily backup service script
-├── backup-manager.ps1         # Interactive manager script
-├── docker-compose.yml         # Docker Compose configuration
-├── Dockerfile                 # Docker image definition
-├── worldedit_snapshot.sh      # Main backup script
-├── cron_parser.pl             # Cron expression parser
-├── README_POWERSHELL.md       # This documentation
-├── .env                       # Environment configuration (auto-generated)
-└── minecraft/                 # Default backup directory (auto-created)
-    └── backups/               # Backup files stored here
-```
-
-## Script Architecture
-
-### Modular Design
-The scripts use a modular architecture with shared functions:
-
-- **`functions.ps1`**: Contains all shared functions
-- **Individual scripts**: Import and use shared functions
-- **Consistent behavior**: All scripts use the same validation and error handling
-- **Easy maintenance**: Changes to shared functions apply to all scripts
-
-### Shared Functions Include:
-- Path detection and validation
-- Docker and Docker Compose checks
-- Environment file generation
-- Service management
-- User interface helpers
-- Error handling and logging
-
-## Notes
-
-1. **Docker Desktop**: Must be running before using any scripts
-2. **PowerShell Execution Policy**: May need to be set to allow script execution
-3. **Administrator Rights**: Some operations may require Administrator privileges
-4. **Path Conversion**: Scripts automatically convert Windows paths to Docker format
-5. **Auto-Detection**: Scripts will create default directories if they don't exist
-6. **Service Persistence**: Daily backup services continue running after script completion
-7. **Logs**: All backup operations are logged and can be viewed through the manager
-8. **Modular Design**: Shared functions ensure consistency across all scripts
-9. **Smart Backup Paths**: Default backup location is relative to .minecraft folder for better organization
-10. **Single World Focus**: Simplified to work with one world folder at a time for better reliability
-
-## Support
-
-For issues or questions:
-1. Check the troubleshooting section above
-2. View logs using `.\backup-manager.ps1` option 5
-3. Verify Docker Desktop is running
-4. Check PowerShell execution policy: `Get-ExecutionPolicy`
-5. Run PowerShell as Administrator if needed
-6. Check the shared functions in `functions.ps1` for debugging 
