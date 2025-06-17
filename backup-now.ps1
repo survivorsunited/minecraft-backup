@@ -1,119 +1,161 @@
 # WorldEdit Snapshot Backup - One Time Backup
-# PowerShell script for Windows to run a single WorldEdit backup
+# Description: Creates a one-time backup of a Minecraft world
+# Usage: .\backup-now.ps1 [-WorldPath <path>] [-BackupPath <path>] [-WorldName <name>] [-CompressionType <type>] [-RegionOnly] [-FullBackup]
 
 param(
-    [string]$WorldPath = "",
-    [string]$BackupPath = "",
+    [string]$WorldPath,
+    [string]$BackupPath,
     [string]$WorldName = "world",
+    [ValidateSet("zip", "tar.gz", "tgz", "none")]
     [string]$CompressionType = "zip",
-    [switch]$RegionOnly = $false,
-    [switch]$FullBackup = $false,
-    [switch]$Help = $false
+    [switch]$RegionOnly,
+    [switch]$FullBackup
 )
 
 # Import shared functions
 . "$PSScriptRoot\functions.ps1"
 
-# Show help if requested
-if ($Help) {
-    Show-ScriptHelp -ScriptName "backup-now.ps1" -HelpText @"
-WorldEdit Snapshot Backup - One Time Backup
-
-Usage: .\backup-now.ps1 [options]
-
-Options:
-    -WorldPath <path>        Path to Minecraft world folder (auto-detected if not specified)
-    -BackupPath <path>       Path to store backups (auto-detected if not specified)
-    -WorldName <name>        World name for backup structure (default: world)
-    -CompressionType <type>  Compression type: zip, tar.gz, none (default: zip)
-    -RegionOnly              Backup only region folder to save space
-    -FullBackup              Backup the entire .minecraft folder with "-full" suffix
-    -Help                    Show this help message
-
-Examples:
-    .\backup-now.ps1
-    .\backup-now.ps1 -WorldPath "C:\minecraft\server\world" -BackupPath "D:\backups"
-    .\backup-now.ps1 -RegionOnly -CompressionType tar.gz
-    .\backup-now.ps1 -FullBackup
-
-"@
-}
-
-# Main script execution
 Write-Host "WorldEdit Snapshot Backup - One Time Backup" -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan
 
-# Check prerequisites
-if (-not (Test-Prerequisites)) {
+# Auto-detect paths if not provided
+if (-not $WorldPath) {
+    $WorldPath = Get-DefaultWorldPath
+}
+if (-not $BackupPath) {
+    $BackupPath = Get-DefaultBackupPath
+}
+
+# Validate paths
+if (-not (Test-WorldPath $WorldPath)) {
     exit 1
 }
 
-# Auto-detect or use provided paths
-if ([string]::IsNullOrEmpty($WorldPath)) {
-    $WorldPath = Get-DefaultWorldPath
-} else {
-    if (-not (Test-WorldPath -Path $WorldPath -WorldType "World")) {
-        exit 1
-    }
-}
-
-if ([string]::IsNullOrEmpty($BackupPath)) {
-    $BackupPath = Get-DefaultBackupPath
-} else {
-    if (-not (Test-AndCreateBackupDirectory -BackupPath $BackupPath)) {
-        exit 1
-    }
-}
-
 # Validate compression type
-if (-not (Test-CompressionType -CompressionType $CompressionType)) {
+if (-not (Test-CompressionType $CompressionType)) {
     exit 1
 }
 
 # Display configuration
-Show-BackupConfiguration -WorldPath $WorldPath -BackupPath $BackupPath -WorldName $WorldName -CompressionType $CompressionType -RegionOnly $RegionOnly -FullBackup $FullBackup
+Write-Host ""
+Write-Host "Backup Configuration:" -ForegroundColor Yellow
+Write-Host "  World Path: $WorldPath" -ForegroundColor White
+Write-Host "  Backup Path: $BackupPath" -ForegroundColor White
+Write-Host "  World Name: $WorldName" -ForegroundColor White
+Write-Host "  Compression: $CompressionType" -ForegroundColor White
+Write-Host "  Region Only: $RegionOnly" -ForegroundColor White
+Write-Host "  Full Backup: $FullBackup" -ForegroundColor White
 
 # Create .env file
 New-EnvFile -WorldPath $WorldPath -BackupPath $BackupPath -WorldName $WorldName -CompressionType $CompressionType -RegionOnly $RegionOnly -FullBackup $FullBackup
 
-# Build Docker image if needed
-if (-not (Build-DockerImage -ServiceName "worldedit-backup-now" -Profile "worldedit-backup")) {
-    exit 1
+# Load environment variables
+if (Test-Path ".env") {
+    Get-Content ".env" | ForEach-Object {
+        if ($_ -match "^([^#][^=]+)=(.*)$") {
+            $name = $matches[1].Trim()
+            $value = $matches[2].Trim()
+            Set-Variable -Name $name -Value $value -Scope Global
+        }
+    }
 }
 
-# Run backup
-Write-Host "`nStarting WorldEdit backup..." -ForegroundColor Yellow
+# Determine backup mode (default to native)
+$backupMode = if ($env:BACKUP_MODE) { $env:BACKUP_MODE } else { "native" }
+Write-Host ""
+Write-Host "Backup Mode: $backupMode" -ForegroundColor Magenta
 
-# Capture Docker output and exit code separately
-$dockerOutput = & docker compose --profile worldedit-backup up worldedit-backup-now 2>&1
-$exitCode = $LASTEXITCODE
-
-# Add a clear separator after Docker output
-Write-Host "`n" -ForegroundColor White
-
-if ($exitCode -eq 0) {
-    Write-Host "✅ Backup completed successfully!" -ForegroundColor Green
-    Write-Host "📁 Backup location: $BackupPath" -ForegroundColor Cyan
+if ($backupMode -eq "native") {
+    # Native PowerShell backup
+    Write-Host "Using native PowerShell backup with 7zip..." -ForegroundColor Green
     
-    # Extract backup filename from Docker output
-    $backupFile = $dockerOutput | Select-String "completed.*\.(zip|tar\.gz)$" | ForEach-Object { 
-        $_.Matches[0].Value -replace ".*completed: /backups/", "" 
+    # Check if 7zip is available
+    $7zipPath = Test-7ZipAvailable
+    if (-not $7zipPath) {
+        Write-Host "7zip not found. Falling back to Docker mode..." -ForegroundColor Yellow
+        $backupMode = "docker"
     }
-    if ($backupFile) {
-        Write-Host "📦 Backup file: $backupFile" -ForegroundColor Cyan
+    else {
+        Write-Host "7zip found: $7zipPath" -ForegroundColor Green
+        
+        # Create timestamp
+        $timestamp = Get-Date -Format "yyyy-MM-dd-HH-mm-ss"
+        
+        # Determine world path for native backup
+        $minecraftHomePath = (Split-Path (Split-Path $WorldPath -Parent) -Parent)
+        $actualWorldPath = Get-WorldPath -MinecraftHomePath $minecraftHomePath -WorldName $WorldName
+        
+        # Create backup
+        try {
+            $backupFile = New-NativeBackup -WorldPath $actualWorldPath -BackupPath $BackupPath -WorldName $WorldName -CompressionType $CompressionType -RegionOnly $RegionOnly -FullBackup $FullBackup -Timestamp $timestamp
+            
+            Write-Host ""
+            Write-Host "✅ Backup completed successfully!" -ForegroundColor Green
+            Write-Host "📁 Backup location: $BackupPath" -ForegroundColor Cyan
+            Write-Host "📦 Backup file: $(Split-Path $backupFile -Leaf)" -ForegroundColor Cyan
+            Write-Host "🔧 Backup type: $(if ($FullBackup) { 'Full .minecraft folder' } else { 'WorldEdit snapshot' })" -ForegroundColor Cyan
+            Write-Host ""
+            Write-Host "🎉 Done!" -ForegroundColor Green
+            exit 0
+        }
+        catch {
+            Write-Host "Native backup failed. Falling back to Docker mode..." -ForegroundColor Yellow
+            $backupMode = "docker"
+        }
     }
-    
-    # Show backup type
-    if ($FullBackup) {
-        Write-Host "🔧 Backup type: Full .minecraft folder" -ForegroundColor Yellow
-    } else {
-        Write-Host "🔧 Backup type: WorldEdit snapshot" -ForegroundColor Yellow
-    }
-} else {
-    Write-Host "❌ Backup failed with exit code: $exitCode" -ForegroundColor Red
-    Write-Host "`nDocker output:" -ForegroundColor Gray
-    Write-Host $dockerOutput -ForegroundColor Gray
-    exit 1
 }
 
-Write-Host "`n🎉 Done!" -ForegroundColor Green 
+if ($backupMode -eq "docker") {
+    # Docker backup
+    Write-Host "Using Docker backup..." -ForegroundColor Green
+    
+    # Check Docker availability
+    if (-not (Test-DockerAvailable)) {
+        Write-Host "Docker not available. Cannot proceed with backup." -ForegroundColor Red
+        exit 1
+    }
+    
+    if (-not (Test-DockerComposeAvailable)) {
+        Write-Host "Docker Compose not available. Cannot proceed with backup." -ForegroundColor Red
+        exit 1
+    }
+    
+    Write-Host "Building Docker image..." -ForegroundColor Yellow
+    
+    # Build and run Docker container
+    try {
+        docker compose --profile worldedit-backup build worldedit-backup-now
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Failed to build Docker image" -ForegroundColor Red
+            exit 1
+        }
+        
+        Write-Host ""
+        Write-Host "Starting WorldEdit backup..." -ForegroundColor Yellow
+        
+        # Run the backup
+        docker compose --profile worldedit-backup up worldedit-backup-now
+        $exitCode = $LASTEXITCODE
+        
+        # Clean up
+        docker compose --profile worldedit-backup down
+        
+        if ($exitCode -eq 0) {
+            Write-Host ""
+            Write-Host "✅ Backup completed successfully!" -ForegroundColor Green
+            Write-Host "📁 Backup location: $BackupPath" -ForegroundColor Cyan
+            Write-Host "🔧 Backup type: $(if ($FullBackup) { 'Full .minecraft folder' } else { 'WorldEdit snapshot' })" -ForegroundColor Cyan
+            Write-Host ""
+            Write-Host "🎉 Done!" -ForegroundColor Green
+        }
+        else {
+            Write-Host ""
+            Write-Host "❌ Backup failed!" -ForegroundColor Red
+            exit 1
+        }
+    }
+    catch {
+        Write-Host "Docker backup failed: $($_.Exception.Message)" -ForegroundColor Red
+        exit 1
+    }
+} 

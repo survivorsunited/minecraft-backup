@@ -13,6 +13,8 @@ A comprehensive backup solution for Minecraft worlds that creates WorldEdit-comp
 - **State Persistence**: Remembers next backup time across script restarts
 - **Docker Support**: Full Docker Compose integration with multiple backup strategies
 - **Multi-World Support**: Backup overworld, nether, and end dimensions separately
+- **Native PowerShell backup (no Docker required)**
+- **Docker-based backup (optional)**
 
 ## WorldEdit Snapshot Structure
 
@@ -374,4 +376,62 @@ minecraft-backup/
 6. Ensure sufficient permissions for the backup and temporary directories
 7. The script automatically handles missed backups when restarted after the scheduled time
 8. Docker Compose services use profiles to organize different backup strategies
-9. Multi-world backups require separate volume mounts and backup paths for each world 
+9. Multi-world backups require separate volume mounts and backup paths for each world
+
+## Native PowerShell Backup (No Docker Required)
+
+You can now run backups directly from PowerShell using the included `tools/7zip/7za.exe` (7zip command-line tool). **Docker is not required!**
+
+### Requirements
+- Windows with PowerShell
+- `tools/7zip/7za.exe` present (see below)
+
+### Usage
+```powershell
+# Run a world backup (native, default)
+.\backup-now.ps1
+
+# Run a full backup (native, default)
+.\backup-now.ps1 -FullBackup
+
+# Force Docker mode (if needed)
+$env:BACKUP_MODE="docker"; .\backup-now.ps1
+```
+
+### 7zip Setup
+- The script expects `tools/7zip/7za.exe` to exist.
+- You can download the portable 7-Zip from [7-zip.org](https://www.7-zip.org/download.html) and place `7za.exe` in `tools/7zip/`.
+
+### Switching Modes
+- By default, the script uses **native** mode.
+- To force Docker mode, set `BACKUP_MODE=docker` in your environment or `.env` file.
+- To force native mode, set `BACKUP_MODE=native` (default).
+
+### Environment Variable
+- `BACKUP_MODE=native` (default, uses PowerShell + 7zip)
+- `BACKUP_MODE=docker` (uses Docker container)
+
+## Docker-Based Backup (Optional)
+
+If you prefer Docker, all previous Docker-based workflows are still supported. The script will fall back to Docker if 7zip is missing.
+
+### Usage
+```powershell
+# Run a world backup using Docker
+$env:BACKUP_MODE="docker"; .\backup-now.ps1
+```
+
+## Features & Options
+- Automatic world path detection (singleplayer/multiplayer)
+- Backup rotation and retention
+- Compression: zip, tar.gz, none
+- Region-only backup option
+- Full backup excludes the backups folder to prevent recursion
+
+## Troubleshooting
+- If you see an error about 7zip missing, download `7za.exe` and place it in `tools/7zip/`.
+- If Docker is not installed and 7zip is missing, the script will not run.
+
+---
+
+For more details, see `README_POWERSHELL.md` for PowerShell-specific usage and advanced options. 

@@ -13,6 +13,12 @@ A collection of PowerShell scripts for Windows that provide easy-to-use interfac
 - **Cross-Platform Compatibility**: Works with the same Docker setup as Linux
 - **Modular Design**: Shared functions for easy maintenance and consistency
 - **Smart Backup Paths**: Default backup location relative to .minecraft folder
+- **Native PowerShell backup (no Docker required)**
+- **Docker-based backup (optional, fallback)**
+- **Backup rotation and retention**
+- **Compression: zip, tar.gz, none**
+- **Region-only backup option**
+- **Full backup excludes the backups folder**
 
 ## Prerequisites
 
@@ -359,3 +365,56 @@ Get-ExecutionPolicy
 .\backup-daily.ps1 -Stop
 .\backup-daily.ps1 -Status
 ```
+
+## Native PowerShell Backup (Default)
+
+### Requirements
+- Windows with PowerShell
+- `tools/7zip/7za.exe` present (see below)
+
+### Usage
+```powershell
+# Run a world backup (native, default)
+.\backup-now.ps1
+
+# Run a full backup (native, default)
+.\backup-now.ps1 -FullBackup
+
+# Force Docker mode (if needed)
+$env:BACKUP_MODE="docker"; .\backup-now.ps1
+```
+
+### 7zip Setup
+- Download the portable 7-Zip from [7-zip.org](https://www.7-zip.org/download.html)
+- Place `7za.exe` in `tools/7zip/` in your project directory
+
+### Switching Modes
+- By default, the script uses **native** mode.
+- To force Docker mode, set `BACKUP_MODE=docker` in your environment or `.env` file.
+- To force native mode, set `BACKUP_MODE=native` (default).
+
+### Environment Variable
+- `BACKUP_MODE=native` (default, uses PowerShell + 7zip)
+- `BACKUP_MODE=docker` (uses Docker container)
+
+## Docker-Based Backup (Optional)
+
+If you prefer Docker, all previous Docker-based workflows are still supported. The script will fall back to Docker if 7zip is missing.
+
+### Usage
+```powershell
+# Run a world backup using Docker
+$env:BACKUP_MODE="docker"; .\backup-now.ps1
+```
+
+## Troubleshooting
+- If you see an error about 7zip missing, download `7za.exe` and place it in `tools/7zip/`.
+- If Docker is not installed and 7zip is missing, the script will not run.
+
+## Advanced Options
+- All previous options (region-only, full backup, compression type, etc.) are supported in both modes.
+- The script will automatically detect the best world path and backup location.
+
+---
+
+For more details, see the main `README.md`.
