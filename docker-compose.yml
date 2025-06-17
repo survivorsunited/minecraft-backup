@@ -1,0 +1,107 @@
+services:
+
+  # WorldEdit Snapshot Backup Services
+  worldedit-backup-now:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: no
+    user: root
+    volumes:
+      - ${MINECRAFT_WORLD_PATH}:/minecraft/world:ro
+      - ${WORLDEDIT_BACKUP_PATH}:/backups
+      - ${WORLDEDIT_TMP_DIR}:/tmp/backup
+    environment:
+      - WORLD_PATH=/minecraft/world
+      - WORLD_NAME=${MINECRAFT_WORLD_NAME:-world}
+      - BACKUP_PATH=/backups
+      - TMP_DIR=/tmp/backup
+      - COMPRESSION_TYPE=${WORLDEDIT_COMPRESSION_TYPE:-zip}
+      - INCLUDE_REGION_ONLY=${WORLDEDIT_REGION_ONLY:-false}
+      - FULL_BACKUP=${WORLDEDIT_FULL_BACKUP:-false}
+    entrypoint: ""
+    command: /worldedit_snapshot.sh
+    profiles:
+      - worldedit-backup
+
+  worldedit-backup-hourly:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    user: root
+    volumes:
+      - ${MINECRAFT_WORLD_PATH}:/minecraft/world:ro
+      - ${WORLDEDIT_BACKUP_PATH}:/backups
+      - ${WORLDEDIT_TMP_DIR}:/tmp/backup
+    healthcheck:
+      test: 'pgrep -f "worldedit_snapshot.sh" || exit 1'
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - WORLD_PATH=/minecraft/world
+      - WORLD_NAME=${MINECRAFT_WORLD_NAME:-world}
+      - BACKUP_PATH=/backups
+      - TMP_DIR=/tmp/backup
+      - CRON_EXPRESSION=${WORLDEDIT_CRON_HOURLY:-0 * * * *}
+      - FILES_TO_KEEP=${WORLDEDIT_FILES_TO_KEEP_HOURLY:-24}
+      - COMPRESSION_TYPE=${WORLDEDIT_COMPRESSION_TYPE:-zip}
+      - INCLUDE_REGION_ONLY=${WORLDEDIT_REGION_ONLY:-false}
+    entrypoint: ""
+    command: /worldedit_snapshot.sh
+
+  worldedit-backup-daily:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    user: root
+    volumes:
+      - ${MINECRAFT_WORLD_PATH}:/minecraft/world:ro
+      - ${WORLDEDIT_BACKUP_PATH}:/backups
+      - ${WORLDEDIT_TMP_DIR}:/tmp/backup
+    healthcheck:
+      test: 'pgrep -f "worldedit_snapshot.sh" || exit 1'
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - WORLD_PATH=/minecraft/world
+      - WORLD_NAME=${MINECRAFT_WORLD_NAME:-world}
+      - BACKUP_PATH=/backups
+      - TMP_DIR=/tmp/backup
+      - CRON_EXPRESSION=${WORLDEDIT_CRON_DAILY:-0 2 * * *}
+      - FILES_TO_KEEP=${WORLDEDIT_FILES_TO_KEEP_DAILY:-7}
+      - COMPRESSION_TYPE=${WORLDEDIT_COMPRESSION_TYPE:-zip}
+      - INCLUDE_REGION_ONLY=${WORLDEDIT_REGION_ONLY:-false}
+    entrypoint: ""
+    command: /worldedit_snapshot.sh
+
+  worldedit-backup-weekly:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    user: root
+    volumes:
+      - ${MINECRAFT_WORLD_PATH}:/minecraft/world:ro
+      - ${WORLDEDIT_BACKUP_PATH}:/backups
+      - ${WORLDEDIT_TMP_DIR}:/tmp/backup
+    healthcheck:
+      test: 'pgrep -f "worldedit_snapshot.sh" || exit 1'
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    environment:
+      - WORLD_PATH=/minecraft/world
+      - WORLD_NAME=${MINECRAFT_WORLD_NAME:-world}
+      - BACKUP_PATH=/backups
+      - TMP_DIR=/tmp/backup
+      - CRON_EXPRESSION=${WORLDEDIT_CRON_WEEKLY:-0 3 * * 0}
+      - FILES_TO_KEEP=${WORLDEDIT_FILES_TO_KEEP_WEEKLY:-4}
+      - COMPRESSION_TYPE=${WORLDEDIT_COMPRESSION_TYPE:-zip}
+      - INCLUDE_REGION_ONLY=${WORLDEDIT_REGION_ONLY:-false}
+    entrypoint: ""
+    command: /worldedit_snapshot.sh
+
