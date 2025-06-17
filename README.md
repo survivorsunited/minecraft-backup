@@ -419,6 +419,11 @@ If you prefer Docker, all previous Docker-based workflows are still supported. T
 ```powershell
 # Run a world backup using Docker
 $env:BACKUP_MODE="docker"; .\backup-now.ps1
+
+# Or use Docker Compose directly (V2 syntax):
+docker compose --profile worldedit-backup build worldedit-backup-now
+docker compose --profile worldedit-backup up worldedit-backup-now
+docker compose --profile worldedit-backup down
 ```
 
 ## Features & Options

@@ -240,7 +240,7 @@ The scripts automatically detect common Minecraft world locations:
 # Then select option 5
 
 # Or directly with Docker
-docker-compose logs -f worldedit-backup-daily
+docker compose logs -f worldedit-backup-daily
 ```
 
 ## Configuration
@@ -292,16 +292,16 @@ You can modify the `.env` file directly or use script parameters:
 ```powershell
 # Check Docker status
 docker --version
-docker-compose --version
+docker compose --version
 
 # Check service status
 .\backup-daily.ps1 -Status
 
 # View logs
-docker-compose logs worldedit-backup-daily
+docker compose logs worldedit-backup-daily
 
 # Test configuration
-docker-compose config
+docker compose config
 
 # Check PowerShell execution policy
 Get-ExecutionPolicy
@@ -405,6 +405,11 @@ If you prefer Docker, all previous Docker-based workflows are still supported. T
 ```powershell
 # Run a world backup using Docker
 $env:BACKUP_MODE="docker"; .\backup-now.ps1
+
+# Or use Docker Compose directly (V2 syntax):
+docker compose --profile worldedit-backup build worldedit-backup-now
+docker compose --profile worldedit-backup up worldedit-backup-now
+docker compose --profile worldedit-backup down
 ```
 
 ## Troubleshooting
