@@ -42,8 +42,7 @@ A collection of PowerShell scripts for Windows that provide easy-to-use interfac
 The backup scripts now use a standardized naming convention to prevent conflicts when running multiple backup scripts simultaneously:
 
 ### Naming Format
-```
-ret{retention}-{timestamp}-{backup_type}
+```ret{retention}-{timestamp}-{backup_type}
 ```
 
 ### Examples:
@@ -355,6 +354,25 @@ Get-ExecutionPolicy
 **"Script execution policy"**
 - Run: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
 - Or run PowerShell as Administrator and set policy
+
+### File Access Issues (Minecraft Server Running)
+
+If you encounter warnings like "The process cannot access the file because it is being used by another process", this means the Minecraft server is running and has locked the world files.
+
+**Solutions:**
+1. **Automatic Fallback**: The script will automatically fall back to Docker mode when file access issues are detected
+2. **Stop Minecraft Server**: Temporarily stop the Minecraft server before running the backup
+3. **Use Docker Mode**: Force Docker mode by setting `BACKUP_MODE=docker` in the environment
+
+**Example:**
+```powershell
+# This will automatically fall back to Docker if files are locked
+.\backup-now.ps1 -WorldPath "D:\data\.minecraft\world" -BackupPath "C:\data\backups"
+
+# Or force Docker mode
+$env:BACKUP_MODE="docker"
+.\backup-now.ps1 -WorldPath "D:\data\.minecraft\world" -BackupPath "C:\data\backups"
+```
 
 ## Examples
 

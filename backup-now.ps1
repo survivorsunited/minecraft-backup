@@ -17,6 +17,10 @@ param(
 
 Write-Host "WorldEdit Snapshot Backup - One Time Backup" -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Note: If the Minecraft server is running, some files may be locked." -ForegroundColor Yellow
+Write-Host "The script will automatically fall back to Docker mode if needed." -ForegroundColor Yellow
+Write-Host ""
 
 # Auto-detect paths if not provided
 if (-not $WorldPath) {
@@ -107,8 +111,15 @@ if ($backupMode -eq "native") {
             exit 0
         }
         catch {
-            Write-Host "Native backup failed. Falling back to Docker mode..." -ForegroundColor Yellow
-            $backupMode = "docker"
+            $exitCode = $LASTEXITCODE
+            if ($exitCode -eq 2) {
+                Write-Host "Native backup failed due to file access issues (Minecraft server may be running)." -ForegroundColor Yellow
+                Write-Host "Automatically falling back to Docker mode..." -ForegroundColor Yellow
+                $backupMode = "docker"
+            } else {
+                Write-Host "Native backup failed. Falling back to Docker mode..." -ForegroundColor Yellow
+                $backupMode = "docker"
+            }
         }
     }
 }

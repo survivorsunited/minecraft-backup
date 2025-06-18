@@ -596,6 +596,13 @@ function New-NativeBackup {
     
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Failed to create backup archive."
+        # Check if it's a file access error (Minecraft server running)
+        if ($LASTEXITCODE -eq 1) {
+            Write-Host "This appears to be a file access error. The Minecraft server may be running and locking the files." -ForegroundColor Yellow
+            Write-Host "Consider using Docker mode or stopping the Minecraft server temporarily." -ForegroundColor Yellow
+            # Return a special exit code to indicate file access issues
+            exit 2
+        }
         exit 1
     }
     
@@ -782,6 +789,13 @@ function New-NativeBackup {
     
     if ($LASTEXITCODE -ne 0) {
         Write-Error "Failed to create backup archive."
+        # Check if it's a file access error (Minecraft server running)
+        if ($LASTEXITCODE -eq 1) {
+            Write-Host "This appears to be a file access error. The Minecraft server may be running and locking the files." -ForegroundColor Yellow
+            Write-Host "Consider using Docker mode or stopping the Minecraft server temporarily." -ForegroundColor Yellow
+            # Return a special exit code to indicate file access issues
+            exit 2
+        }
         exit 1
     }
     
