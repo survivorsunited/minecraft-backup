@@ -528,7 +528,8 @@ function New-NativeBackup {
     # Create backup name with retention at front for better grouping
     $backupName = if ($FullBackup) { "$Timestamp-full" } else { $Timestamp }
     if ($Retention -gt 0) {
-        $backupName = "ret$Retention-$backupName"
+        $backupType = if ($FullBackup) { "full" } else { "region" }
+        $backupName = "$backupType$Retention-$backupName"
     }
     $finalBackupPath = ""
     
@@ -721,7 +722,8 @@ function New-NativeBackup {
     # Create backup name with retention at front for better grouping
     $backupName = if ($FullBackup) { "$Timestamp-full" } else { $Timestamp }
     if ($Retention -gt 0) {
-        $backupName = "ret$Retention-$backupName"
+        $backupType = if ($FullBackup) { "full" } else { "region" }
+        $backupName = "$backupType$Retention-$backupName"
     }
     $finalBackupPath = ""
     

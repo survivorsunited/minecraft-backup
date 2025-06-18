@@ -42,27 +42,29 @@ A collection of PowerShell scripts for Windows that provide easy-to-use interfac
 The backup scripts now use a standardized naming convention to prevent conflicts when running multiple backup scripts simultaneously:
 
 ### Naming Format
-```ret{retention}-{timestamp}-{backup_type}
+```
+{backup_type}{retention}-{timestamp}-{backup_type}
 ```
 
 ### Examples:
 - **One-time backup**: `2024-01-15-14-30-25.zip` (no retention prefix)
-- **Hourly backup**: `ret24-2024-01-15-14-30-25.zip`
-- **Daily backup**: `ret7-2024-01-15-14-30-25.zip`
-- **Weekly backup**: `ret4-2024-01-15-14-30-25.zip`
+- **Hourly backup**: `region24-2024-01-15-14-30-25.zip`
+- **Daily backup**: `region7-2024-01-15-14-30-25.zip`
+- **Weekly backup**: `region4-2024-01-15-14-30-25.zip`
 - **Full backup**: `2024-01-15-14-30-25-full.zip` (no retention prefix)
-- **Scheduled full backup**: `ret1-2024-01-15-14-30-25-full.zip`
+- **Scheduled full backup**: `full1-2024-01-15-14-30-25-full.zip`
 
 ### Components:
-- **Retention**: `ret{N}` where N is the number of backups to keep (omitted for one-time backups)
+- **Backup Type**: `region` (for world backups) or `full` (for complete .minecraft backups)
+- **Retention**: `{N}` where N is the number of backups to keep (omitted for one-time backups)
 - **Timestamp**: `YYYY-MM-DD-HH-MM-SS` format
-- **Backup Type**: `full` (for complete .minecraft backup) or omitted (for world-only backup)
+- **Backup Type Suffix**: `full` (for complete .minecraft backup) or omitted (for world-only backup)
 
 ### Benefits:
 - **No Conflicts**: Multiple backup scripts can run simultaneously without overwriting each other
-- **Better Grouping**: Backups with the same retention are grouped together alphabetically
-- **Retention Tracking**: See retention settings directly in the filename
-- **Organized Storage**: Backups are clearly categorized by retention policy
+- **Better Grouping**: Backups with the same type and retention are grouped together alphabetically
+- **Clear Identification**: Immediately see if it's a region or full backup
+- **Organized Storage**: Backups are clearly categorized by type and retention policy
 
 ## Scripts Overview
 
