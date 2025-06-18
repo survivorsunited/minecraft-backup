@@ -43,28 +43,27 @@ The backup scripts now use a standardized naming convention to prevent conflicts
 
 ### Naming Format
 ```
-{script_type}-{timestamp}-{backup_type}-ret{retention}
+ret{retention}-{timestamp}-{backup_type}
 ```
 
 ### Examples:
-- **One-time backup**: `now-2024-01-15-14-30-25.zip`
-- **Hourly backup**: `hourly-2024-01-15-14-30-25-ret24.zip`
-- **Daily backup**: `daily-2024-01-15-14-30-25-ret7.zip`
-- **Weekly backup**: `weekly-2024-01-15-14-30-25-ret4.zip`
-- **Full backup**: `now-2024-01-15-14-30-25-full.zip`
-- **Scheduled full backup**: `daily-2024-01-15-14-30-25-full-ret1.zip`
+- **One-time backup**: `2024-01-15-14-30-25.zip` (no retention prefix)
+- **Hourly backup**: `ret24-2024-01-15-14-30-25.zip`
+- **Daily backup**: `ret7-2024-01-15-14-30-25.zip`
+- **Weekly backup**: `ret4-2024-01-15-14-30-25.zip`
+- **Full backup**: `2024-01-15-14-30-25-full.zip` (no retention prefix)
+- **Scheduled full backup**: `ret1-2024-01-15-14-30-25-full.zip`
 
 ### Components:
-- **Script Type**: `now`, `hourly`, `daily`, `weekly`, `scheduled`
+- **Retention**: `ret{N}` where N is the number of backups to keep (omitted for one-time backups)
 - **Timestamp**: `YYYY-MM-DD-HH-MM-SS` format
 - **Backup Type**: `full` (for complete .minecraft backup) or omitted (for world-only backup)
-- **Retention**: `ret{N}` where N is the number of backups to keep
 
 ### Benefits:
 - **No Conflicts**: Multiple backup scripts can run simultaneously without overwriting each other
-- **Easy Identification**: Quickly identify which script created each backup
+- **Better Grouping**: Backups with the same retention are grouped together alphabetically
 - **Retention Tracking**: See retention settings directly in the filename
-- **Organized Storage**: Backups are clearly categorized by type and schedule
+- **Organized Storage**: Backups are clearly categorized by retention policy
 
 ## Scripts Overview
 

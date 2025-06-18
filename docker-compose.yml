@@ -19,7 +19,6 @@ services:
       - COMPRESSION_TYPE=${WORLDEDIT_COMPRESSION_TYPE:-zip}
       - INCLUDE_REGION_ONLY=${WORLDEDIT_REGION_ONLY:-false}
       - FULL_BACKUP=${WORLDEDIT_FULL_BACKUP:-false}
-      - SCRIPT_TYPE=now
       - FILES_TO_KEEP=0
     entrypoint: ""
     command: /worldedit_snapshot.sh
@@ -50,7 +49,6 @@ services:
       - FILES_TO_KEEP=${WORLDEDIT_FILES_TO_KEEP_HOURLY:-24}
       - COMPRESSION_TYPE=${WORLDEDIT_COMPRESSION_TYPE:-zip}
       - INCLUDE_REGION_ONLY=${WORLDEDIT_REGION_ONLY:-false}
-      - SCRIPT_TYPE=hourly
     entrypoint: ""
     command: /worldedit_snapshot.sh
 
@@ -78,7 +76,6 @@ services:
       - FILES_TO_KEEP=${WORLDEDIT_FILES_TO_KEEP_DAILY:-7}
       - COMPRESSION_TYPE=${WORLDEDIT_COMPRESSION_TYPE:-zip}
       - INCLUDE_REGION_ONLY=${WORLDEDIT_REGION_ONLY:-false}
-      - SCRIPT_TYPE=daily
     entrypoint: ""
     command: /worldedit_snapshot.sh
 
@@ -106,7 +103,6 @@ services:
       - FILES_TO_KEEP=${WORLDEDIT_FILES_TO_KEEP_WEEKLY:-4}
       - COMPRESSION_TYPE=${WORLDEDIT_COMPRESSION_TYPE:-zip}
       - INCLUDE_REGION_ONLY=${WORLDEDIT_REGION_ONLY:-false}
-      - SCRIPT_TYPE=weekly
     entrypoint: ""
     command: /worldedit_snapshot.sh
 

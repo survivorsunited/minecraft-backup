@@ -516,7 +516,6 @@ function New-NativeBackup {
         [bool]$RegionOnly = $false,
         [bool]$FullBackup = $false,
         [string]$Timestamp,
-        [string]$ScriptType = "now",
         [int]$Retention = 0
     )
     
@@ -526,11 +525,10 @@ function New-NativeBackup {
         exit 1
     }
     
-    # Create backup name with script type and retention info to prevent conflicts
+    # Create backup name with retention at front for better grouping
     $backupName = if ($FullBackup) { "$Timestamp-full" } else { $Timestamp }
-    $backupName = "$ScriptType-$backupName"
     if ($Retention -gt 0) {
-        $backupName = "$backupName-ret$Retention"
+        $backupName = "ret$Retention-$backupName"
     }
     $finalBackupPath = ""
     
@@ -704,7 +702,6 @@ function New-NativeBackup {
         [bool]$RegionOnly = $false,
         [bool]$FullBackup = $false,
         [string]$Timestamp,
-        [string]$ScriptType = "now",
         [int]$Retention = 0
     )
     
@@ -714,11 +711,10 @@ function New-NativeBackup {
         exit 1
     }
     
-    # Create backup name with script type and retention info to prevent conflicts
+    # Create backup name with retention at front for better grouping
     $backupName = if ($FullBackup) { "$Timestamp-full" } else { $Timestamp }
-    $backupName = "$ScriptType-$backupName"
     if ($Retention -gt 0) {
-        $backupName = "$backupName-ret$Retention"
+        $backupName = "ret$Retention-$backupName"
     }
     $finalBackupPath = ""
     

@@ -240,11 +240,10 @@ calculate_next_run_time() {
 # ------------------------------------------------------------------------------
 create_full_backup() {
     local timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
-    local script_type="${SCRIPT_TYPE:-now}"
     local files_to_keep="${FILES_TO_KEEP:-0}"
-    local backup_name="${script_type}-${timestamp}-full"
+    local backup_name="${timestamp}-full"
     if [[ "$files_to_keep" -gt 0 ]]; then
-        backup_name="${backup_name}-ret${files_to_keep}"
+        backup_name="ret${files_to_keep}-${backup_name}"
     fi
     local minecraft_home="${MINECRAFT_HOME_PATH:-/minecraft}"
     local final_backup_path=""
@@ -290,11 +289,10 @@ create_full_backup() {
 # ------------------------------------------------------------------------------
 create_worldedit_backup() {
     local timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
-    local script_type="${SCRIPT_TYPE:-now}"
     local files_to_keep="${FILES_TO_KEEP:-0}"
-    local backup_name="${script_type}-${timestamp}"
+    local backup_name="${timestamp}"
     if [[ "$files_to_keep" -gt 0 ]]; then
-        backup_name="${backup_name}-ret${files_to_keep}"
+        backup_name="ret${files_to_keep}-${backup_name}"
     fi
     local final_backup_path=""
     
@@ -360,9 +358,8 @@ create_backup_timestamp() {
 create_backup_rotated() {
     local current_index_file="$BACKUP_PATH/${WORLD_NAME}.index"
     local timestamp=$(date +"%Y-%m-%d-%H-%M-%S")
-    local script_type="${SCRIPT_TYPE:-scheduled}"
     local files_to_keep="${FILES_TO_KEEP:-7}"
-    local backup_name="${script_type}-${timestamp}-ret${files_to_keep}"
+    local backup_name="ret${files_to_keep}-${timestamp}"
     local final_backup_path=""
     local backup_filename=""
     
