@@ -525,90 +525,99 @@ function New-NativeBackup {
         exit 1
     }
     
-    # Create backup name with retention at front for better grouping
-    $backupName = if ($FullBackup) { "$Timestamp-full" } else { $Timestamp }
-    if ($Retention -gt 0) {
-        $backupType = if ($FullBackup) { "full" } else { "region" }
-        $backupName = "$backupType$Retention-$backupName"
-    }
-    $finalBackupPath = ""
+    # Save original directory to return to later
+    $originalDirectory = Get-Location
     
-    Write-Host "Creating backup: $backupName" -ForegroundColor Cyan
-    
-    switch ($CompressionType.ToLower()) {
-        "zip" {
-            $finalBackupPath = Join-Path $BackupPath "$backupName.zip"
-            Write-Host "Creating ZIP archive with 7zip: $finalBackupPath" -ForegroundColor Yellow
-            
-            if ($FullBackup) {
-                # Full backup - exclude backups folder
-                $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
-                Set-Location $minecraftHome
-                & $7zipPath a -tzip $finalBackupPath . -x!backups | Out-Null
-            }
-            else {
-                # World backup
-                Set-Location $WorldPath
-                if ($RegionOnly) {
-                    & $7zipPath a -tzip $finalBackupPath region | Out-Null
+    try {
+        # Create backup name with retention at front for better grouping
+        $backupName = if ($FullBackup) { "$Timestamp-full" } else { $Timestamp }
+        if ($Retention -gt 0) {
+            $backupType = if ($FullBackup) { "full" } else { "region" }
+            $backupName = "$backupType$Retention-$backupName"
+        }
+        $finalBackupPath = ""
+        
+        Write-Host "Creating backup: $backupName" -ForegroundColor Cyan
+        
+        switch ($CompressionType.ToLower()) {
+            "zip" {
+                $finalBackupPath = Join-Path $BackupPath "$backupName.zip"
+                Write-Host "Creating ZIP archive with 7zip: $finalBackupPath" -ForegroundColor Yellow
+                
+                if ($FullBackup) {
+                    # Full backup - exclude backups folder
+                    $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
+                    Set-Location $minecraftHome
+                    & $7zipPath a -tzip $finalBackupPath . -x!backups | Out-Null
                 }
                 else {
-                    & $7zipPath a -tzip $finalBackupPath . | Out-Null
+                    # World backup
+                    Set-Location $WorldPath
+                    if ($RegionOnly) {
+                        & $7zipPath a -tzip $finalBackupPath region | Out-Null
+                    }
+                    else {
+                        & $7zipPath a -tzip $finalBackupPath . | Out-Null
+                    }
                 }
             }
-        }
-        "tar.gz" {
-            $finalBackupPath = Join-Path $BackupPath "$backupName.tar.gz"
-            Write-Host "Creating TAR.GZ archive with 7zip: $finalBackupPath" -ForegroundColor Yellow
-            
-            if ($FullBackup) {
-                $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
-                Set-Location $minecraftHome
-                & $7zipPath a -ttar $finalBackupPath . -x!backups | Out-Null
-            }
-            else {
-                Set-Location $WorldPath
-                if ($RegionOnly) {
-                    & $7zipPath a -ttar $finalBackupPath region | Out-Null
-                }
-                else {
-                    & $7zipPath a -ttar $finalBackupPath . | Out-Null
-                }
-            }
-        }
-        "none" {
-            $finalBackupPath = Join-Path $BackupPath $backupName
-            Write-Host "Creating uncompressed backup: $finalBackupPath" -ForegroundColor Yellow
-            
-            if ($FullBackup) {
-                $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
-                Copy-Item -Path $minecraftHome -Destination $finalBackupPath -Recurse -Exclude "backups"
-            }
-            else {
-                if ($RegionOnly) {
-                    Copy-Item -Path (Join-Path $WorldPath "region") -Destination $finalBackupPath -Recurse
+            "tar.gz" {
+                $finalBackupPath = Join-Path $BackupPath "$backupName.tar.gz"
+                Write-Host "Creating TAR.GZ archive with 7zip: $finalBackupPath" -ForegroundColor Yellow
+                
+                if ($FullBackup) {
+                    $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
+                    Set-Location $minecraftHome
+                    & $7zipPath a -ttar $finalBackupPath . -x!backups | Out-Null
                 }
                 else {
-                    Copy-Item -Path $WorldPath -Destination $finalBackupPath -Recurse
+                    Set-Location $WorldPath
+                    if ($RegionOnly) {
+                        & $7zipPath a -ttar $finalBackupPath region | Out-Null
+                    }
+                    else {
+                        & $7zipPath a -ttar $finalBackupPath . | Out-Null
+                    }
+                }
+            }
+            "none" {
+                $finalBackupPath = Join-Path $BackupPath $backupName
+                Write-Host "Creating uncompressed backup: $finalBackupPath" -ForegroundColor Yellow
+                
+                if ($FullBackup) {
+                    $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
+                    Copy-Item -Path $minecraftHome -Destination $finalBackupPath -Recurse -Exclude "backups"
+                }
+                else {
+                    if ($RegionOnly) {
+                        Copy-Item -Path (Join-Path $WorldPath "region") -Destination $finalBackupPath -Recurse
+                    }
+                    else {
+                        Copy-Item -Path $WorldPath -Destination $finalBackupPath -Recurse
+                    }
                 }
             }
         }
-    }
-    
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to create backup archive."
-        # Check if it's a file access error (Minecraft server running)
-        if ($LASTEXITCODE -eq 1) {
-            Write-Host "This appears to be a file access error. The Minecraft server may be running and locking the files." -ForegroundColor Yellow
-            Write-Host "Consider using Docker mode or stopping the Minecraft server temporarily." -ForegroundColor Yellow
-            # Return a special exit code to indicate file access issues
-            exit 2
+        
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to create backup archive."
+            # Check if it's a file access error (Minecraft server running)
+            if ($LASTEXITCODE -eq 1) {
+                Write-Host "This appears to be a file access error. The Minecraft server may be running and locking the files." -ForegroundColor Yellow
+                Write-Host "Consider using Docker mode or stopping the Minecraft server temporarily." -ForegroundColor Yellow
+                # Return a special exit code to indicate file access issues
+                exit 2
+            }
+            exit 1
         }
-        exit 1
+        
+        Write-Host "Backup completed: $finalBackupPath" -ForegroundColor Green
+        return $finalBackupPath
     }
-    
-    Write-Host "Backup completed: $finalBackupPath" -ForegroundColor Green
-    return $finalBackupPath
+    finally {
+        # Always return to original directory, even if an error occurred
+        Set-Location $originalDirectory
+    }
 }
 
 # ------------------------------------------------------------------------------
@@ -719,90 +728,99 @@ function New-NativeBackup {
         exit 1
     }
     
-    # Create backup name with retention at front for better grouping
-    $backupName = if ($FullBackup) { "$Timestamp-full" } else { $Timestamp }
-    if ($Retention -gt 0) {
-        $backupType = if ($FullBackup) { "full" } else { "region" }
-        $backupName = "$backupType$Retention-$backupName"
-    }
-    $finalBackupPath = ""
+    # Save original directory to return to later
+    $originalDirectory = Get-Location
     
-    Write-Host "Creating backup: $backupName" -ForegroundColor Cyan
-    
-    switch ($CompressionType.ToLower()) {
-        "zip" {
-            $finalBackupPath = Join-Path $BackupPath "$backupName.zip"
-            Write-Host "Creating ZIP archive with 7zip: $finalBackupPath" -ForegroundColor Yellow
-            
-            if ($FullBackup) {
-                # Full backup - exclude backups folder
-                $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
-                Set-Location $minecraftHome
-                & $7zipPath a -tzip $finalBackupPath . -x!backups | Out-Null
-            }
-            else {
-                # World backup
-                Set-Location $WorldPath
-                if ($RegionOnly) {
-                    & $7zipPath a -tzip $finalBackupPath region | Out-Null
+    try {
+        # Create backup name with retention at front for better grouping
+        $backupName = if ($FullBackup) { "$Timestamp-full" } else { $Timestamp }
+        if ($Retention -gt 0) {
+            $backupType = if ($FullBackup) { "full" } else { "region" }
+            $backupName = "$backupType$Retention-$backupName"
+        }
+        $finalBackupPath = ""
+        
+        Write-Host "Creating backup: $backupName" -ForegroundColor Cyan
+        
+        switch ($CompressionType.ToLower()) {
+            "zip" {
+                $finalBackupPath = Join-Path $BackupPath "$backupName.zip"
+                Write-Host "Creating ZIP archive with 7zip: $finalBackupPath" -ForegroundColor Yellow
+                
+                if ($FullBackup) {
+                    # Full backup - exclude backups folder
+                    $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
+                    Set-Location $minecraftHome
+                    & $7zipPath a -tzip $finalBackupPath . -x!backups | Out-Null
                 }
                 else {
-                    & $7zipPath a -tzip $finalBackupPath . | Out-Null
+                    # World backup
+                    Set-Location $WorldPath
+                    if ($RegionOnly) {
+                        & $7zipPath a -tzip $finalBackupPath region | Out-Null
+                    }
+                    else {
+                        & $7zipPath a -tzip $finalBackupPath . | Out-Null
+                    }
                 }
             }
-        }
-        "tar.gz" {
-            $finalBackupPath = Join-Path $BackupPath "$backupName.tar.gz"
-            Write-Host "Creating TAR.GZ archive with 7zip: $finalBackupPath" -ForegroundColor Yellow
-            
-            if ($FullBackup) {
-                $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
-                Set-Location $minecraftHome
-                & $7zipPath a -ttar $finalBackupPath . -x!backups | Out-Null
-            }
-            else {
-                Set-Location $WorldPath
-                if ($RegionOnly) {
-                    & $7zipPath a -ttar $finalBackupPath region | Out-Null
-                }
-                else {
-                    & $7zipPath a -ttar $finalBackupPath . | Out-Null
-                }
-            }
-        }
-        "none" {
-            $finalBackupPath = Join-Path $BackupPath $backupName
-            Write-Host "Creating uncompressed backup: $finalBackupPath" -ForegroundColor Yellow
-            
-            if ($FullBackup) {
-                $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
-                Copy-Item -Path $minecraftHome -Destination $finalBackupPath -Recurse -Exclude "backups"
-            }
-            else {
-                if ($RegionOnly) {
-                    Copy-Item -Path (Join-Path $WorldPath "region") -Destination $finalBackupPath -Recurse
+            "tar.gz" {
+                $finalBackupPath = Join-Path $BackupPath "$backupName.tar.gz"
+                Write-Host "Creating TAR.GZ archive with 7zip: $finalBackupPath" -ForegroundColor Yellow
+                
+                if ($FullBackup) {
+                    $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
+                    Set-Location $minecraftHome
+                    & $7zipPath a -ttar $finalBackupPath . -x!backups | Out-Null
                 }
                 else {
-                    Copy-Item -Path $WorldPath -Destination $finalBackupPath -Recurse
+                    Set-Location $WorldPath
+                    if ($RegionOnly) {
+                        & $7zipPath a -ttar $finalBackupPath region | Out-Null
+                    }
+                    else {
+                        & $7zipPath a -ttar $finalBackupPath . | Out-Null
+                    }
+                }
+            }
+            "none" {
+                $finalBackupPath = Join-Path $BackupPath $backupName
+                Write-Host "Creating uncompressed backup: $finalBackupPath" -ForegroundColor Yellow
+                
+                if ($FullBackup) {
+                    $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
+                    Copy-Item -Path $minecraftHome -Destination $finalBackupPath -Recurse -Exclude "backups"
+                }
+                else {
+                    if ($RegionOnly) {
+                        Copy-Item -Path (Join-Path $WorldPath "region") -Destination $finalBackupPath -Recurse
+                    }
+                    else {
+                        Copy-Item -Path $WorldPath -Destination $finalBackupPath -Recurse
+                    }
                 }
             }
         }
-    }
-    
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Failed to create backup archive."
-        # Check if it's a file access error (Minecraft server running)
-        if ($LASTEXITCODE -eq 1) {
-            Write-Host "This appears to be a file access error. The Minecraft server may be running and locking the files." -ForegroundColor Yellow
-            Write-Host "Consider using Docker mode or stopping the Minecraft server temporarily." -ForegroundColor Yellow
-            # Return a special exit code to indicate file access issues
-            exit 2
+        
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "Failed to create backup archive."
+            # Check if it's a file access error (Minecraft server running)
+            if ($LASTEXITCODE -eq 1) {
+                Write-Host "This appears to be a file access error. The Minecraft server may be running and locking the files." -ForegroundColor Yellow
+                Write-Host "Consider using Docker mode or stopping the Minecraft server temporarily." -ForegroundColor Yellow
+                # Return a special exit code to indicate file access issues
+                exit 2
+            }
+            exit 1
         }
-        exit 1
+        
+        Write-Host "Backup completed: $finalBackupPath" -ForegroundColor Green
+        return $finalBackupPath
     }
-    
-    Write-Host "Backup completed: $finalBackupPath" -ForegroundColor Green
-    return $finalBackupPath
+    finally {
+        # Always return to original directory, even if an error occurred
+        Set-Location $originalDirectory
+    }
 }
 
 # Function to update backup index file and manage retention
