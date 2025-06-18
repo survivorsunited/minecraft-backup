@@ -82,8 +82,16 @@ if ($backupMode -eq "native") {
         $timestamp = Get-Date -Format "yyyy-MM-dd-HH-mm-ss"
         
         # Determine world path for native backup
-        $minecraftHomePath = (Split-Path (Split-Path $WorldPath -Parent) -Parent)
-        $actualWorldPath = Get-WorldPath -MinecraftHomePath $minecraftHomePath -WorldName $WorldName
+        # If the provided path is already a world path, use it directly
+        # Otherwise, calculate the minecraft home path
+        if ((Split-Path $WorldPath -Leaf) -eq $WorldName) {
+            # User provided a world path directly, use it as is
+            $actualWorldPath = $WorldPath
+        } else {
+            # User provided a minecraft home path, calculate world path
+            $minecraftHomePath = $WorldPath
+            $actualWorldPath = Get-WorldPath -MinecraftHomePath $minecraftHomePath -WorldName $WorldName
+        }
         
         # Create backup
         try {
