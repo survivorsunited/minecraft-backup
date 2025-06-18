@@ -87,7 +87,7 @@ if ($backupMode -eq "native") {
         
         # Create backup
         try {
-            $backupFile = New-NativeBackup -WorldPath $actualWorldPath -BackupPath $BackupPath -WorldName $WorldName -CompressionType $CompressionType -RegionOnly $RegionOnly -FullBackup $FullBackup -Timestamp $timestamp
+            $backupFile = New-NativeBackup -WorldPath $actualWorldPath -BackupPath $BackupPath -WorldName $WorldName -CompressionType $CompressionType -RegionOnly $RegionOnly -FullBackup $FullBackup -Timestamp $timestamp -ScriptType "now"
             
             Write-Host ""
             Write-Host "✅ Backup completed successfully!" -ForegroundColor Green

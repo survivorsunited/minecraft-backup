@@ -515,7 +515,9 @@ function New-NativeBackup {
         [string]$CompressionType = "zip",
         [bool]$RegionOnly = $false,
         [bool]$FullBackup = $false,
-        [string]$Timestamp
+        [string]$Timestamp,
+        [string]$ScriptType = "now",
+        [int]$Retention = 0
     )
     
     $7zipPath = Test-7ZipAvailable
@@ -524,7 +526,12 @@ function New-NativeBackup {
         exit 1
     }
     
+    # Create backup name with script type and retention info to prevent conflicts
     $backupName = if ($FullBackup) { "$Timestamp-full" } else { $Timestamp }
+    $backupName = "$ScriptType-$backupName"
+    if ($Retention -gt 0) {
+        $backupName = "$backupName-ret$Retention"
+    }
     $finalBackupPath = ""
     
     Write-Host "Creating backup: $backupName" -ForegroundColor Cyan
@@ -696,7 +703,9 @@ function New-NativeBackup {
         [string]$CompressionType = "zip",
         [bool]$RegionOnly = $false,
         [bool]$FullBackup = $false,
-        [string]$Timestamp
+        [string]$Timestamp,
+        [string]$ScriptType = "now",
+        [int]$Retention = 0
     )
     
     $7zipPath = Test-7ZipAvailable
@@ -705,7 +714,12 @@ function New-NativeBackup {
         exit 1
     }
     
+    # Create backup name with script type and retention info to prevent conflicts
     $backupName = if ($FullBackup) { "$Timestamp-full" } else { $Timestamp }
+    $backupName = "$ScriptType-$backupName"
+    if ($Retention -gt 0) {
+        $backupName = "$backupName-ret$Retention"
+    }
     $finalBackupPath = ""
     
     Write-Host "Creating backup: $backupName" -ForegroundColor Cyan

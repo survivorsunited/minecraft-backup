@@ -37,6 +37,35 @@ A collection of PowerShell scripts for Windows that provide easy-to-use interfac
 - **Windows Terminal** (recommended for better experience)
 - **Git Bash** (alternative terminal)
 
+## Backup Naming Convention
+
+The backup scripts now use a standardized naming convention to prevent conflicts when running multiple backup scripts simultaneously:
+
+### Naming Format
+```
+{script_type}-{timestamp}-{backup_type}-ret{retention}
+```
+
+### Examples:
+- **One-time backup**: `now-2024-01-15-14-30-25.zip`
+- **Hourly backup**: `hourly-2024-01-15-14-30-25-ret24.zip`
+- **Daily backup**: `daily-2024-01-15-14-30-25-ret7.zip`
+- **Weekly backup**: `weekly-2024-01-15-14-30-25-ret4.zip`
+- **Full backup**: `now-2024-01-15-14-30-25-full.zip`
+- **Scheduled full backup**: `daily-2024-01-15-14-30-25-full-ret1.zip`
+
+### Components:
+- **Script Type**: `now`, `hourly`, `daily`, `weekly`, `scheduled`
+- **Timestamp**: `YYYY-MM-DD-HH-MM-SS` format
+- **Backup Type**: `full` (for complete .minecraft backup) or omitted (for world-only backup)
+- **Retention**: `ret{N}` where N is the number of backups to keep
+
+### Benefits:
+- **No Conflicts**: Multiple backup scripts can run simultaneously without overwriting each other
+- **Easy Identification**: Quickly identify which script created each backup
+- **Retention Tracking**: See retention settings directly in the filename
+- **Organized Storage**: Backups are clearly categorized by type and schedule
+
 ## Scripts Overview
 
 ### 1. `functions.ps1` - Shared Functions Library
