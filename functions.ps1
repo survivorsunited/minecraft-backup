@@ -546,7 +546,18 @@ function New-NativeBackup {
                 
                 if ($FullBackup) {
                     # Full backup - exclude backups folder
-                    $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
+                    # Determine the correct minecraft home path
+                    # If the provided path ends with the world name, it's a world path
+                    # Otherwise, assume it's already a minecraft home path
+                    if ((Split-Path $WorldPath -Leaf) -eq $WorldName) {
+                        # User provided a world path, calculate minecraft home
+                        $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
+                    } else {
+                        # User provided a minecraft home path directly
+                        $minecraftHome = $WorldPath
+                    }
+                    
+                    Write-Host "Full backup: Archiving minecraft home directory: $minecraftHome" -ForegroundColor Yellow
                     Set-Location $minecraftHome
                     & $7zipPath a -tzip $finalBackupPath . -x!backups | Out-Null
                 }
@@ -566,7 +577,16 @@ function New-NativeBackup {
                 Write-Host "Creating TAR.GZ archive with 7zip: $finalBackupPath" -ForegroundColor Yellow
                 
                 if ($FullBackup) {
-                    $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
+                    # Determine the correct minecraft home path
+                    if ((Split-Path $WorldPath -Leaf) -eq $WorldName) {
+                        # User provided a world path, calculate minecraft home
+                        $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
+                    } else {
+                        # User provided a minecraft home path directly
+                        $minecraftHome = $WorldPath
+                    }
+                    
+                    Write-Host "Full backup: Archiving minecraft home directory: $minecraftHome" -ForegroundColor Yellow
                     Set-Location $minecraftHome
                     & $7zipPath a -ttar $finalBackupPath . -x!backups | Out-Null
                 }
@@ -585,7 +605,16 @@ function New-NativeBackup {
                 Write-Host "Creating uncompressed backup: $finalBackupPath" -ForegroundColor Yellow
                 
                 if ($FullBackup) {
-                    $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
+                    # Determine the correct minecraft home path
+                    if ((Split-Path $WorldPath -Leaf) -eq $WorldName) {
+                        # User provided a world path, calculate minecraft home
+                        $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
+                    } else {
+                        # User provided a minecraft home path directly
+                        $minecraftHome = $WorldPath
+                    }
+                    
+                    Write-Host "Full backup: Copying minecraft home directory: $minecraftHome" -ForegroundColor Yellow
                     Copy-Item -Path $minecraftHome -Destination $finalBackupPath -Recurse -Exclude "backups"
                 }
                 else {
@@ -749,7 +778,18 @@ function New-NativeBackup {
                 
                 if ($FullBackup) {
                     # Full backup - exclude backups folder
-                    $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
+                    # Determine the correct minecraft home path
+                    # If the provided path ends with the world name, it's a world path
+                    # Otherwise, assume it's already a minecraft home path
+                    if ((Split-Path $WorldPath -Leaf) -eq $WorldName) {
+                        # User provided a world path, calculate minecraft home
+                        $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
+                    } else {
+                        # User provided a minecraft home path directly
+                        $minecraftHome = $WorldPath
+                    }
+                    
+                    Write-Host "Full backup: Archiving minecraft home directory: $minecraftHome" -ForegroundColor Yellow
                     Set-Location $minecraftHome
                     & $7zipPath a -tzip $finalBackupPath . -x!backups | Out-Null
                 }
@@ -769,7 +809,16 @@ function New-NativeBackup {
                 Write-Host "Creating TAR.GZ archive with 7zip: $finalBackupPath" -ForegroundColor Yellow
                 
                 if ($FullBackup) {
-                    $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
+                    # Determine the correct minecraft home path
+                    if ((Split-Path $WorldPath -Leaf) -eq $WorldName) {
+                        # User provided a world path, calculate minecraft home
+                        $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
+                    } else {
+                        # User provided a minecraft home path directly
+                        $minecraftHome = $WorldPath
+                    }
+                    
+                    Write-Host "Full backup: Archiving minecraft home directory: $minecraftHome" -ForegroundColor Yellow
                     Set-Location $minecraftHome
                     & $7zipPath a -ttar $finalBackupPath . -x!backups | Out-Null
                 }
@@ -788,7 +837,16 @@ function New-NativeBackup {
                 Write-Host "Creating uncompressed backup: $finalBackupPath" -ForegroundColor Yellow
                 
                 if ($FullBackup) {
-                    $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
+                    # Determine the correct minecraft home path
+                    if ((Split-Path $WorldPath -Leaf) -eq $WorldName) {
+                        # User provided a world path, calculate minecraft home
+                        $minecraftHome = Split-Path (Split-Path $WorldPath -Parent) -Parent
+                    } else {
+                        # User provided a minecraft home path directly
+                        $minecraftHome = $WorldPath
+                    }
+                    
+                    Write-Host "Full backup: Copying minecraft home directory: $minecraftHome" -ForegroundColor Yellow
                     Copy-Item -Path $minecraftHome -Destination $finalBackupPath -Recurse -Exclude "backups"
                 }
                 else {
